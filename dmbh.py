@@ -36,7 +36,7 @@ for i in range(0,Nsteps):
 
 ax.set_ylim(0,1.5)
 
-
+plt.show()
 
 #%%
 # Constants
@@ -89,12 +89,11 @@ class SphericalAccretion:
             self.calculate_velocities(dt)
             self.update_positions(dt)
 
-    def plot_mass_profile(self):
-        plt.plot(self.r, self.mass_profile)
-        plt.xlabel('Radius')
-        plt.ylabel('Enclosed Mass')
-        plt.title('Evolution of Enclosed Mass Profile')
-        plt.show()
+    def plot_mass_profile(self, ax):
+        ax.plot(self.r, self.mass_profile)
+        ax.set_xlabel('Radius')
+        ax.set_ylabel('Enclosed Mass')
+        ax.set_title('Evolution of Enclosed Mass Profile')
 
 # Example usage:
 r_min = 10
@@ -105,15 +104,17 @@ initial_mass_profile = np.ones(100)
 dt = 0.01
 total_time = 2
 
+fig1, ax1 = plt.subplots(1,)
+
 accretion = SphericalAccretion(r_min, r_max, num_points, initial_mass_profile)
 accretion.run_simulation(total_time, dt)
-accretion.plot_mass_profile()
+accretion.plot_mass_profile(ax1)
 accretion.run_simulation(total_time, dt)
-accretion.plot_mass_profile()
+accretion.plot_mass_profile(ax1)
 accretion.run_simulation(total_time, dt)
-accretion.plot_mass_profile()
+accretion.plot_mass_profile(ax1)
 accretion.run_simulation(total_time, dt)
-accretion.plot_mass_profile()
+accretion.plot_mass_profile(ax1)
 
 
-
+plt.show()
