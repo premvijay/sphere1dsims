@@ -38,6 +38,56 @@ ax.set_ylim(0,1.5)
 
 plt.show()
 
+
+#%%
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.integrate import solve_ivp
+
+def gravity(t, y, shell_mass):
+    """
+    Function representing the gravitational force acting on each shell.
+    """
+    N = len(y) // 2
+    pos = y[:N]  # Positions of shells
+    vel = y[N:]  # Velocities of shells
+    
+    accel = -shell_mass * np.sum((pos[:, None] < pos[None]), axis=0) / pos**2 / 1e1
+    # accel += .005 / pos**3  # Additional acceleration terms due to angular momentum (if needed)
+    
+    # For shells crossing through the center:
+    vel *= np.sign(pos)
+    pos = np.abs(pos)
+    
+    return np.concatenate([vel, accel])
+
+# Initial conditions
+TotMass = 30
+NumShells = 30
+shell_mass = TotMass / NumShells
+pos0 = np.linspace(.05, 1, NumShells)
+vel0 = pos0 * 2  # Initial velocities from Hubble flow
+
+# Pack initial conditions
+y0 = np.concatenate([pos0, vel0])
+
+# Time span
+TotalTime = 2
+t_span = (0, TotalTime)
+
+# Solve the ODE
+sol = solve_ivp(lambda t, y: gravity(t, y, shell_mass), t_span, y0, method='RK45')
+
+# Plot the trajectories
+plt.figure()
+plt.plot(sol.t, sol.y[:NumShells].T)
+plt.xlabel('Time')
+plt.ylabel('Position')
+plt.title('Trajectories of Shells')
+plt.ylim(0,2)
+plt.show()
+
+
 #%%
 # Constants
 G = 6.67430e-11  # Gravitational constant
