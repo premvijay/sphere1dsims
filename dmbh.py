@@ -40,6 +40,7 @@ plt.show()
 
 
 #%%
+# Alternate implementation using scipy integrate for faster vectorized computation and robust methods
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp
@@ -53,6 +54,7 @@ def gravity(t, y, shell_mass):
     vel = y[N:]  # Velocities of shells
     
     accel = -shell_mass * np.sum((pos[:, None] < pos[None]), axis=0) / pos**2 / 1e1
+    # accel = -shell_mass * (np.sum((pos[:, None] < (pos*1)[None]), axis=0)+np.sum((pos[:, None] < (pos*1)[None]), axis=0))/2 / pos**2 / 1e1
     # accel += .005 / pos**3  # Additional acceleration terms due to angular momentum (if needed)
     
     # For shells crossing through the center:
@@ -86,6 +88,19 @@ plt.ylabel('Position')
 plt.title('Trajectories of Shells')
 plt.ylim(0,2)
 plt.show()
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 #%%
