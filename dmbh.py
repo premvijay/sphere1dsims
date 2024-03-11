@@ -18,18 +18,19 @@ t=0
 fig, ax = plt.subplots(1,)
 
 TotalTime = 2
-dt=.002
+dt=.02
 
 Nsteps = int(TotalTime//dt)
 for i in range(0,Nsteps):
     t+=dt
-    accel = -shellMass*(pos[:,None]<pos[None]).sum(axis=0)/pos**2/1e1 # acceleration due to gravity
-    # accel += .5/pos**3 #angular momentum term
+    # accel = -shellMass*(pos[:,None]<pos[None]).sum(axis=0)/(pos+1e-2)**2/1e1 # acceleration due to gravity
+    accel = -shellMass*(np.tanh(pos[None]-pos[:,None])+1).sum(axis=0)/2/(pos+1e-2)**2/1e1 # acceleration due to gravity
+    accel += .05/pos**3 #angular momentum term
     pos += vel*dt
     vel += accel*dt
     #For shells crossing through the centre:
-    vel *= np.sign(pos)
-    pos = np.abs(pos)
+    # vel *= np.sign(pos)
+    # pos = np.abs(pos)
     
     
     ax.scatter(pos*0+t,pos,c=col,s=1)
@@ -53,13 +54,14 @@ def gravity(t, y, shell_mass):
     pos = y[:N]  # Positions of shells
     vel = y[N:]  # Velocities of shells
     
-    accel = -shell_mass * np.sum((pos[:, None] < pos[None]), axis=0) / pos**2 / 1e1
-    # accel = -shell_mass * (np.sum((pos[:, None] < (pos*1)[None]), axis=0)+np.sum((pos[:, None] < (pos*1)[None]), axis=0))/2 / pos**2 / 1e1
-    # accel += .005 / pos**3  # Additional acceleration terms due to angular momentum (if needed)
+    # accel = -shell_mass * np.sum((pos[:, None] < pos[None]), axis=0) / (pos+3e-4)**2 / 1e1
+    accel = -shell_mass * np.sum((np.tanh(pos[None]-pos[:,None])+1)/2, axis=0) / (pos+3e-8)**2 / 1e1
+    # accel = -shell_mass * (np.sum((pos[:, None] < (pos*.9)[None]), axis=0)+np.sum((pos[:, None] < (pos*1.1)[None]), axis=0))/2 / (pos+3e-4)**2 / 1e1
+    accel += .005 / pos**3  # Additional acceleration terms due to angular momentum (if needed)
     
     # For shells crossing through the center:
-    vel *= np.sign(pos)
-    pos = np.abs(pos)
+    # vel *= np.sign(pos)
+    # pos = np.abs(pos)
     
     return np.concatenate([vel, accel])
 
@@ -78,11 +80,11 @@ TotalTime = 2
 t_span = (0, TotalTime)
 
 # Solve the ODE
-sol = solve_ivp(lambda t, y: gravity(t, y, shell_mass), t_span, y0, method='RK45')
+sol = solve_ivp(lambda t, y: gravity(t, y, shell_mass), t_span, y0, method='Radau')
 
-# Plot the trajectories
+#%% Plot the trajectories
 plt.figure()
-plt.plot(sol.t, sol.y[:NumShells].T)
+plt.plot(sol.t, sol.y[:NumShells:1].T)
 plt.xlabel('Time')
 plt.ylabel('Position')
 plt.title('Trajectories of Shells')
