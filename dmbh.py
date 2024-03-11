@@ -41,6 +41,10 @@ plt.show()
 
 
 #%%
+def thick_shell_prof(x,size=1):
+    x/=size
+    return np.where(np.logical_and(x >= -1, x <= 1), (1 + x)/2, (x>1).astype(np.int16))
+
 # Alternate implementation using scipy integrate for faster vectorized computation and robust methods
 import numpy as np
 import matplotlib.pyplot as plt
@@ -55,7 +59,7 @@ def gravity(t, y, shell_mass):
     vel = y[N:]  # Velocities of shells
     
     # accel = -shell_mass * np.sum((pos[:, None] < pos[None]), axis=0) / (pos+3e-4)**2 / 1e1
-    accel = -shell_mass * np.sum((np.tanh(pos[None]-pos[:,None])+1)/2, axis=0) / (pos+3e-8)**2 / 1e1
+    accel = -shell_mass * np.sum(thick_shell_prof(pos[None]-pos[:,None],.3), axis=0) / (pos+1e-2)**2 / 1e1
     # accel = -shell_mass * (np.sum((pos[:, None] < (pos*.9)[None]), axis=0)+np.sum((pos[:, None] < (pos*1.1)[None]), axis=0))/2 / (pos+3e-4)**2 / 1e1
     accel += .005 / pos**3  # Additional acceleration terms due to angular momentum (if needed)
     
