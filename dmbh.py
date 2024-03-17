@@ -44,22 +44,25 @@ plt.show()
 def thick_shell_prof(x,size=1):
     x/=size
     return np.where(np.logical_and(x >= -1, x <= 1), (1 + x)/2, (x>1).astype(np.int16))
+    # return np.arctan(x)/np.pi+1/2
 
 # Alternate implementation using scipy integrate for faster vectorized computation and robust methods
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp
 
-def gravity(t, y, shell_mass):
+def shell_evolve(t, y, shell_mass):
     """
-    Function representing the gravitational force acting on each shell.
+    Function representing the gravitational force+ acting on each shell.
     """
     N = len(y) // 2
     pos = y[:N]  # Positions of shells
     vel = y[N:]  # Velocities of shells
     
-    # accel = -shell_mass * np.sum((pos[:, None] < pos[None]), axis=0) / (pos+3e-4)**2 / 1e1
-    accel = -shell_mass * np.sum(thick_shell_prof(pos[None]-pos[:,None],.3), axis=0) / (pos+1e-2)**2 / 1e1
+    posprof = pos[:,None]
+    posprof.sort()
+    # accel = -shell_mass * np.sum((pos[:, None] < pos[None]), axis=0) / (pos)**2 / 1e1
+    accel = -shell_mass * np.sum(thick_shell_prof(pos[None]-posprof,.2), axis=0) / (pos+1e-2)**2 / 1e1
     # accel = -shell_mass * (np.sum((pos[:, None] < (pos*.9)[None]), axis=0)+np.sum((pos[:, None] < (pos*1.1)[None]), axis=0))/2 / (pos+3e-4)**2 / 1e1
     accel += .005 / pos**3  # Additional acceleration terms due to angular momentum (if needed)
     
@@ -84,21 +87,34 @@ TotalTime = 2
 t_span = (0, TotalTime)
 
 # Solve the ODE
-sol = solve_ivp(lambda t, y: gravity(t, y, shell_mass), t_span, y0, method='Radau')
+sol = solve_ivp(lambda t, y: shell_evolve(t, y, shell_mass), t_span, y0, method='Radau', rtol=1e-7, max_step=0.001)
+
+
 
 #%% Plot the trajectories
 plt.figure()
-plt.plot(sol.t, sol.y[:NumShells:1].T)
+plt.plot(sol.t, sol.y[:NumShells].T)
 plt.xlabel('Time')
 plt.ylabel('Position')
 plt.title('Trajectories of Shells')
-plt.ylim(0,2)
+# plt.ylim(0,2)
 plt.show()
 
 
 
+#%%
+from scipy.signal import savgol_filter
+pos = sol.y[:NumShells,1500]
+posint = np.linspace(.05, 1, NumShells*10)
+plt.plot(posint,savgol_filter(shell_mass * np.sum(thick_shell_prof(posint[None]-pos[:,None],.0002), axis=0),20,1))
 
-
+#%%
+pos = sol.y[:NumShells,1500]
+from scipy.interpolate import interp1d
+Mfn = interp1d(pos0,shell_mass * np.sum(thick_shell_prof(pos0[None]-pos[:,None],.0002), axis=0), kind=1)
+plt.plot(pos0,shell_mass * np.sum(thick_shell_prof(pos0[None]-pos[:,None],.0002), axis=0))
+posint = np.linspace(.05, 1, NumShells*3)
+plt.plot(posint,Mfn(posint))
 
 
 
