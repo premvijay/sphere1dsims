@@ -51,6 +51,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp
 
+def Mbh(r,size):
+    return np.where(np.logical_and(r >= 0, r <= size), r/size, (r>size).astype(np.int16))
+    # np.heaviside(0.1-r,1)
+    
+first = 1
+
 def shell_evolve(t, y, shell_mass):
     """
     Function representing the gravitational force+ acting on each shell.
@@ -61,9 +67,11 @@ def shell_evolve(t, y, shell_mass):
     
     posprof = pos[:,None]
     posprof.sort()
+    if first: print(posprof); first=0
     # accel = -shell_mass * np.sum((pos[:, None] < pos[None]), axis=0) / (pos)**2 / 1e1
-    accel = -shell_mass * np.sum(thick_shell_prof(pos[None]-posprof,.2), axis=0) / (pos+1e-2)**2 / 1e1
+    mass_enc = shell_mass * np.sum(thick_shell_prof(pos[None]-posprof,.02), axis=0) + Mbh(pos,0.1) 
     # accel = -shell_mass * (np.sum((pos[:, None] < (pos*.9)[None]), axis=0)+np.sum((pos[:, None] < (pos*1.1)[None]), axis=0))/2 / (pos+3e-4)**2 / 1e1
+    accel = -mass_enc / (pos+1e-20)**2 / 1e1
     accel += .005 / pos**3  # Additional acceleration terms due to angular momentum (if needed)
     
     # For shells crossing through the center:
