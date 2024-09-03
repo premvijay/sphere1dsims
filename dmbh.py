@@ -67,6 +67,7 @@ def shell_evolve(t, y, shell_mass):
     
     posprof = pos[:,None]
     posprof.sort()
+    global first
     if first: print(posprof); first=0
     # accel = -shell_mass * np.sum((pos[:, None] < pos[None]), axis=0) / (pos)**2 / 1e1
     mass_enc = shell_mass * np.sum(thick_shell_prof(pos[None]-posprof,.02), axis=0) + Mbh(pos,0.1) 
