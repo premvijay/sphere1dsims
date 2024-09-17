@@ -53,7 +53,7 @@ def Mbh(r,size):
     # np.heaviside(0.1-r,1)
     
 # first = 1
-def shell_evolve(t, y, shell_mass):
+def shell_evolve(t, y, L, shell_mass):
     """
     Function representing the gravitational force+ acting on each shell.
     """
@@ -69,8 +69,8 @@ def shell_evolve(t, y, shell_mass):
     mass_enc = shell_mass * np.sum(thick_shell_prof(pos[None]-posprof,.02), axis=0) + Mbh(pos,0.1) 
     # accel = -shell_mass * (np.sum((pos[:, None] < (pos*.9)[None]), axis=0)+np.sum((pos[:, None] < (pos*1.1)[None]), axis=0))/2 / (pos+3e-4)**2 / 1e1
     accel = -mass_enc / (pos+1e-20)**2 / 1e1
-    accel += .02 / pos**3  # Additional acceleration terms due to angular momentum (if needed)
-    
+    accel += L**2 / (pos+1e-20)**3  # Additional acceleration terms due to angular momentum (if needed)
+    accel += - 1e-6 * (3 * mass_enc * L**2) / ((pos+1e-20)**4)
     # For shells crossing through the center:
     # vel *= np.sign(pos)
     # pos = np.abs(pos)
@@ -83,6 +83,7 @@ NumShells = 30
 shell_mass = TotMass / NumShells
 pos0 = np.linspace(.05, 1, NumShells)
 vel0 = pos0 * 2  # Initial velocities from Hubble flow
+L = 0.02
 
 # Pack initial conditions
 y0 = np.concatenate([pos0, vel0])
@@ -92,7 +93,7 @@ TotalTime = 2
 t_span = (0, TotalTime)
 
 # Solve the ODE
-sol = solve_ivp(lambda t, y: shell_evolve(t, y, shell_mass), t_span, y0, method='Radau', rtol=1e-7, max_step=0.001)
+sol = solve_ivp(lambda t, y: shell_evolve(t, y, L, shell_mass), t_span, y0, method='Radau', rtol=1e-7, max_step=0.001)
 
 
 
