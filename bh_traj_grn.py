@@ -90,28 +90,43 @@ Rs = 2 * G * M_bh / c**2
 
 # Specific angular momentum h for a typical orbiting particle near a supermassive black hole
 R_ISCO = 3 * Rs  # Innermost stable circular orbit for a Schwarzschild black hole
-h = np.sqrt(3 * G * M_bh * Rs)
+r_in = 100 * R_ISCO  # Initial radius of the particle
 
+# Test particle velocity (adjust this to simulate different orbits)
+v = 1e7  # Test velocity (in m/s)
+
+# Relativistic energy (normalized)
 m = M_sun
-# h = 1
-v= 1e7
-E = m*c**2+1/2*m*v**2
-r_in = 10*R_ISCO
-h = v*r_in
+gamma = 1 / np.sqrt(1 - (v / c)**2)  # Lorentz factor
+E = gamma * m * c**2  # Relativistic energy
 
-a = h/c
-b = c*h*m/E
+# Angular momentum h = v * r_in
+h = v * r_in
 
-dphidr = lambda r : -1/r**2 * ( (1/b**2) - (1-Rs/r) * (1/a**2 + 1/r**2) )**(-1/2)
+# Dimensionless parameters
+a = h / c
+b = c * h * m / E
 
+# Define the function for dphi/dr
+def dphidr(r):
+    return -1 / r**2 * np.sqrt((1 / b**2) - (1 - Rs / r) * (1 / a**2 + 1 / r**2))**(-1)
 
-
+# Generate the radial grid
 r = np.linspace(r_in, R_ISCO, 1000)
+
+# Integrate to get phi as a function of r
 phi = cumtrapz(dphidr(r), r, initial=0)
 
-plt.plot(r*np.cos(phi), r*np.sin(phi))
+# Plot the orbit in polar coordinates (r, phi)
+plt.plot(r * np.cos(phi), r * np.sin(phi))
 plt.xlim(-r_in, r_in)
 plt.ylim(-r_in, r_in)
+plt.xlabel("x (m)")
+plt.ylabel("y (m)")
+plt.title("Orbit of a test particle around a Schwarzschild black hole")
+plt.grid(True)
+plt.show()
+
 
 
 
