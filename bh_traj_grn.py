@@ -17,7 +17,7 @@ R_ISCO = 3 * Rs  # Innermost stable circular orbit for a Schwarzschild black hol
 h = np.sqrt(3 * G * M_bh * Rs)
 
 # Specific energy epsilon (normalized energy ~1)
-epsilon = 1.0
+epsilon = c**2
 
 # Angular momentum-to-energy ratio
 L_by_E = h / epsilon
@@ -73,3 +73,51 @@ else:
     plt.title("Radial Distance as a Function of Angular Coordinate in Schwarzschild Metric")
     plt.grid(True)
     plt.show()
+
+#%%
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.integrate import cumtrapz
+
+# Constants
+G = 6.67430e-11  # Gravitational constant in m^3 kg^(-1) s^(-2)
+c = 2.998e8      # Speed of light in m/s
+M_sun = 1.989e30 # Solar mass in kg
+M_bh = 1e6 * M_sun  # Supermassive black hole mass (e.g., 1 million solar masses)
+
+# Schwarzschild radius for a supermassive black hole
+Rs = 2 * G * M_bh / c**2
+
+# Specific angular momentum h for a typical orbiting particle near a supermassive black hole
+R_ISCO = 3 * Rs  # Innermost stable circular orbit for a Schwarzschild black hole
+h = np.sqrt(3 * G * M_bh * Rs)
+
+m = M_sun
+# h = 1
+v= 1e7
+E = m*c**2+1/2*m*v**2
+r_in = 10*R_ISCO
+h = v*r_in
+
+a = h/c
+b = c*h*m/E
+
+dphidr = lambda r : -1/r**2 * ( (1/b**2) - (1-Rs/r) * (1/a**2 + 1/r**2) )**(-1/2)
+
+
+
+r = np.linspace(r_in, R_ISCO, 1000)
+phi = cumtrapz(dphidr(r), r, initial=0)
+
+plt.plot(r*np.cos(phi), r*np.sin(phi))
+plt.xlim(-r_in, r_in)
+plt.ylim(-r_in, r_in)
+
+
+
+
+
+
+#%%
+
+
