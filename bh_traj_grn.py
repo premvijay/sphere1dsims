@@ -88,20 +88,22 @@ M_bh = 1e6 * M_sun  # Supermassive black hole mass (e.g., 1 million solar masses
 # Schwarzschild radius for a supermassive black hole
 Rs = 2 * G * M_bh / c**2
 
-# Specific angular momentum h for a typical orbiting particle near a supermassive black hole
-R_ISCO = 3 * Rs  # Innermost stable circular orbit for a Schwarzschild black hole
-r_in = 8e5 * R_ISCO  # Initial radius of the particle
+# Innermost stable circular orbit (ISCO)
+R_ISCO = 3 * Rs
 
-# Test particle velocity (adjust this to simulate different orbits)
-v = 1e5  # Test velocity (in m/s)
+# Initial radius of the particle
+r_in = 8e5 * R_ISCO  
+
+# Calculate the correct orbital velocity for a circular orbit at r_in
+v_orb = np.sqrt(G * M_bh / r_in)
 
 # Relativistic energy (normalized)
 m = M_sun
-gamma = 1 / np.sqrt(1 - (v / c)**2)  # Lorentz factor
+gamma = 1 / np.sqrt(1 - (v_orb / c)**2)  # Lorentz factor
 E = gamma * m * c**2  # Relativistic energy
 
-# Angular momentum h = v * r_in
-h = v * r_in
+# Angular momentum h = v_orb * r_in
+h = v_orb * r_in
 
 # Dimensionless parameters
 a = h / c
