@@ -90,10 +90,10 @@ Rs = 2 * G * M_bh / c**2
 
 # Specific angular momentum h for a typical orbiting particle near a supermassive black hole
 R_ISCO = 3 * Rs  # Innermost stable circular orbit for a Schwarzschild black hole
-r_in = 100 * R_ISCO  # Initial radius of the particle
+r_in = 8e5 * R_ISCO  # Initial radius of the particle
 
 # Test particle velocity (adjust this to simulate different orbits)
-v = 1e7  # Test velocity (in m/s)
+v = 1e5  # Test velocity (in m/s)
 
 # Relativistic energy (normalized)
 m = M_sun
@@ -107,12 +107,14 @@ h = v * r_in
 a = h / c
 b = c * h * m / E
 
+# Rs=0
 # Define the function for dphi/dr
 def dphidr(r):
     return -1 / r**2 * np.sqrt((1 / b**2) - (1 - Rs / r) * (1 / a**2 + 1 / r**2))**(-1)
 
 # Generate the radial grid
-r = np.linspace(r_in, R_ISCO, 1000)
+r = np.linspace(r_in, R_ISCO, 10000)
+r = np.logspace(np.log10(r_in), np.log10(R_ISCO), 10000)
 
 # Integrate to get phi as a function of r
 phi = cumtrapz(dphidr(r), r, initial=0)
