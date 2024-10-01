@@ -122,6 +122,7 @@ r = np.logspace(np.log10(r_in), np.log10(R_ISCO), 10000)
 phi = cumtrapz(dphidr(r), r, initial=0)
 
 # Plot the orbit in polar coordinates (r, phi)
+plt.figure()
 plt.plot(r * np.cos(phi), r * np.sin(phi))
 plt.xlim(-r_in, r_in)
 plt.ylim(-r_in, r_in)
@@ -129,14 +130,69 @@ plt.xlabel("x (m)")
 plt.ylabel("y (m)")
 plt.title("Orbit of a test particle around a Schwarzschild black hole")
 plt.grid(True)
+# plt.show()
+
+
+
+
+
+
+
+##%%
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.integrate import cumtrapz
+
+# Constants
+G = 6.67430e-11  # Gravitational constant in m^3 kg^(-1) s^(-2)
+M_sun = 1.989e30  # Solar mass in kg
+M_bh = 1e6 * M_sun  # Supermassive black hole mass (1 million solar masses)
+
+# Initial conditions for the test particle
+r_in = 8e5 * 3 * (2 * G * M_bh / (2.998e8)**2)  # Initial radial distance (8e5 times ISCO)
+R_ISCO = 3 * (2 * G * M_bh / (2.998e8)**2)  # ISCO radius for a Schwarzschild black hole
+
+# Test particle velocity
+v_theta = 1e5  # Test tangential velocity (in m/s)
+
+# Angular momentum per unit mass (h = v_theta * r_in)
+h = v_theta * r_in
+
+# Small inward radial velocity
+v_r = -1e4  # Small radial inward velocity (in m/s)
+
+# Total energy per unit mass (including radial and tangential velocities)
+E = 0.5 * (v_r**2 + v_theta**2) - G * M_bh / r_in
+
+# Effective potential function in Newtonian mechanics
+def V_eff(r):
+    return -G * M_bh / r + h**2 / (2 * r**2)
+
+# Function for dtheta/dr
+def dthetadr(r):
+    return -h / (r**2 * np.sqrt(2 * (E - V_eff(r))))
+
+# Generate a radial grid from the initial radius down to ISCO
+r = np.logspace(np.log10(r_in), np.log10(R_ISCO), 10000)
+
+# Integrate to get theta as a function of r
+theta = cumtrapz(dthetadr(r), r, initial=0)
+
+# Convert polar coordinates to Cartesian for plotting
+x = r * np.cos(theta)
+y = r * np.sin(theta)
+
+# Plot the orbit
+plt.plot(x, y, label= 'Newtonian limit')
+plt.xlabel("x (m)")
+plt.ylabel("y (m)")
+plt.xlim(-r_in, r_in)
+plt.ylim(-r_in, r_in)
+# plt.title("Newtonian Orbit with Radial Inward Velocity")
+plt.legend()
+plt.grid(True)
+plt.gca().set_aspect('equal', adjustable='box')
 plt.show()
 
-
-
-
-
-
-
-#%%
 
 
