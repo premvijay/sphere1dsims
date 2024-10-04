@@ -219,11 +219,11 @@ m = M_sun
 gamma = 1 / np.sqrt(1 - (v / c)**2)  # Lorentz factor
 E = gamma * m * c**2  # Relativistic energy
 
-# Dimensionless parameters
+# Dimensionless parameters for GR case
 a = h / c
 b = c * h * m / E
 
-# Total energy per unit mass (including radial and tangential velocities)
+# Total energy per unit mass (Newtonian mechanics)
 E_nl = 0.5 * (v**2) - G * M_bh / r_in
 
 # Effective potential function in Newtonian mechanics
@@ -235,27 +235,32 @@ def V_eff(r):
 def drdphi_gr(phi, r):
     return -r**2 * np.sqrt((1 / b**2) - (1 - Rs / r) * (1 / a**2 + 1 / r**2))**(1)
 
-# phi = np.linspace(0,4*np.pi, 1000)
-solngr = solve_ivp(drdphi_gr, (0,1*np.pi), [r_in,])
+# Solve for the GR case
+solngr = solve_ivp(drdphi_gr, (0, 1*np.pi), [r_in], max_step=0.01)
 r_gr = solngr.y[0]
 phi_gr = solngr.t
 
-# Function for dr/dphi in newtonian limit
-def drdphi_nl(phi, r):
-    return -(r**2 * np.sqrt(2 * (E_nl - V_eff(r))))
 
-solnnl = solve_ivp(drdphi_nl, (0,1*np.pi), [r_in,], )
+# Function for dr/dphi in the Newtonian limit
+def drdphi_nl(phi, r):
+    # Check if the energy allows for a real solution, avoid sqrt of negative numbers
+    term = 2 * (E_nl - V_eff(r))
+    if term < 0:
+        return np.inf  # If energy doesn't allow motion, return large value to stop
+    return -r**2 * np.sqrt(term)
+
+# Solve for the Newtonian limit case
+solnnl = solve_ivp(drdphi_nl, (0, 1*np.pi), [r_in], max_step=0.01)
 r_nl = solnnl.y[0]
 phi_nl = solnnl.t
 
 # Plot the orbit
-plt.plot(r_gr * np.cos(phi_gr), r_gr * np.sin(phi_gr), label= 'GR')
-plt.plot(r_nl * np.cos(phi_nl), r_nl * np.sin(phi_nl), label= 'Newtonian limit')
+plt.plot(r_gr * np.cos(phi_gr), r_gr * np.sin(phi_gr), label='GR')
+plt.plot(r_nl * np.cos(phi_nl), r_nl * np.sin(phi_nl), label='Newtonian limit')
 plt.xlabel("x (m)")
 plt.ylabel("y (m)")
 plt.xlim(-r_in, r_in)
 plt.ylim(-r_in, r_in)
-# plt.title("Newtonian Orbit with Radial Inward Velocity")
 plt.legend()
 plt.grid(True)
 plt.gca().set_aspect('equal', adjustable='box')
