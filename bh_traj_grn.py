@@ -183,4 +183,84 @@ plt.plot(theta,r)
 plt.plot(phi,r)
 plt.yscale('log')
 
+#%%
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.integrate import cumtrapz, solve_ivp
+
+# Constants
+G = 6.67430e-11  # Gravitational constant in m^3 kg^(-1) s^(-2)
+c = 2.998e8      # Speed of light in m/s
+M_sun = 1.989e30 # Solar mass in kg
+M_bh = 1e6 * M_sun  # Supermassive black hole mass (e.g., 1 million solar masses)
+
+# Schwarzschild radius for a supermassive black hole
+Rs = 2 * G * M_bh / c**2
+
+# Innermost stable circular orbit (ISCO)
+R_ISCO = 3 * Rs
+
+# Initial radius of the particle
+r_in = 8e5 * R_ISCO  
+
+# Calculate the correct orbital velocity for a circular orbit at r_in
+v_orb = np.sqrt(G * M_bh / r_in)
+
+# Angular momentum per unit mass (h = v_orb * r_in)
+h = v_orb * r_in
+
+# Small inward radial velocity
+v_r = -5.9e5  # Small radial inward velocity (in m/s)
+
+v = np.sqrt(v_r**2 + v_orb**2)
+
+# Relativistic energy (normalized)
+m = M_sun
+gamma = 1 / np.sqrt(1 - (v / c)**2)  # Lorentz factor
+E = gamma * m * c**2  # Relativistic energy
+
+# Dimensionless parameters
+a = h / c
+b = c * h * m / E
+
+# Total energy per unit mass (including radial and tangential velocities)
+E_nl = 0.5 * (v**2) - G * M_bh / r_in
+
+# Effective potential function in Newtonian mechanics
+def V_eff(r):
+    return -G * M_bh / r + h**2 / (2 * r**2)
+
+
+# Define the function for dr/dphi in GR
+def drdphi_gr(phi, r):
+    return -r**2 * np.sqrt((1 / b**2) - (1 - Rs / r) * (1 / a**2 + 1 / r**2))**(1)
+
+# phi = np.linspace(0,4*np.pi, 1000)
+solngr = solve_ivp(drdphi_gr, (0,1*np.pi), [r_in,])
+r_gr = solngr.y[0]
+phi_gr = solngr.t
+
+# Function for dr/dphi in newtonian limit
+def drdphi_nl(phi, r):
+    return -(r**2 * np.sqrt(2 * (E_nl - V_eff(r))))
+
+solnnl = solve_ivp(drdphi_nl, (0,1*np.pi), [r_in,], )
+r_nl = solnnl.y[0]
+phi_nl = solnnl.t
+
+# Plot the orbit
+plt.plot(r_gr * np.cos(phi_gr), r_gr * np.sin(phi_gr), label= 'GR')
+plt.plot(r_nl * np.cos(phi_nl), r_nl * np.sin(phi_nl), label= 'Newtonian limit')
+plt.xlabel("x (m)")
+plt.ylabel("y (m)")
+plt.xlim(-r_in, r_in)
+plt.ylim(-r_in, r_in)
+# plt.title("Newtonian Orbit with Radial Inward Velocity")
+plt.legend()
+plt.grid(True)
+plt.gca().set_aspect('equal', adjustable='box')
+plt.show()
+
+
+
 
