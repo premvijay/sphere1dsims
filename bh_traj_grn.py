@@ -77,7 +77,7 @@ else:
 #%%
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.integrate import cumtrapz
+from scipy.integrate import cumtrapz, solve_ivp
 
 # Constants
 G = 6.67430e-11  # Gravitational constant in m^3 kg^(-1) s^(-2)
@@ -97,13 +97,21 @@ r_in = 8e5 * R_ISCO
 # Calculate the correct orbital velocity for a circular orbit at r_in
 v_orb = np.sqrt(G * M_bh / r_in)
 
+# Angular momentum per unit mass (h = v_orb * r_in)
+h = v_orb * r_in
+
+# Small inward radial velocity
+v_r = -5.9e5  # Small radial inward velocity (in m/s)
+
+v = np.sqrt(v_r**2 + v_orb**2)
+
 # Relativistic energy (normalized)
 m = M_sun
-gamma = 1 / np.sqrt(1 - (v_orb / c)**2)  # Lorentz factor
+gamma = 1 / np.sqrt(1 - (v / c)**2)  # Lorentz factor
 E = gamma * m * c**2  # Relativistic energy
 
-# Angular momentum h = v_orb * r_in
-h = v_orb * r_in
+# # Angular momentum h = v_orb * r_in
+# h = v_orb * r_in
 
 # Dimensionless parameters
 a = h / c
@@ -135,34 +143,8 @@ plt.grid(True)
 
 
 
-
-
-
-##%%
-# import numpy as np
-# import matplotlib.pyplot as plt
-# from scipy.integrate import cumtrapz
-
-# # Constants
-# G = 6.67430e-11  # Gravitational constant in m^3 kg^(-1) s^(-2)
-# M_sun = 1.989e30  # Solar mass in kg
-# M_bh = 1e6 * M_sun  # Supermassive black hole mass (1 million solar masses)
-
-# # Initial conditions for the test particle
-# r_in = 8e5 * 3 * (2 * G * M_bh / (2.998e8)**2)  # Initial radial distance (8e5 times ISCO)
-# R_ISCO = 3 * (2 * G * M_bh / (2.998e8)**2)  # ISCO radius for a Schwarzschild black hole
-
-# # Test particle velocity
-# v_orb = 1e5  # Test tangential velocity (in m/s)
-
-# Angular momentum per unit mass (h = v_orb * r_in)
-h = v_orb * r_in
-
-# Small inward radial velocity
-v_r = -1.9e5  # Small radial inward velocity (in m/s)
-
 # Total energy per unit mass (including radial and tangential velocities)
-E = 0.5 * (v_r**2 + v_orb**2) - G * M_bh / r_in
+E_nl = 0.5 * (v_r**2 + v_orb**2) - G * M_bh / r_in
 
 # Effective potential function in Newtonian mechanics
 def V_eff(r):
@@ -170,7 +152,7 @@ def V_eff(r):
 
 # Function for dtheta/dr
 def dthetadr(r):
-    return -h / (r**2 * np.sqrt(2 * (E - V_eff(r))))
+    return -h / (r**2 * np.sqrt(2 * (E_nl - V_eff(r))))
 
 # Generate a radial grid from the initial radius down to ISCO
 r = np.logspace(np.log10(r_in), np.log10(R_ISCO), 10000)
