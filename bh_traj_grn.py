@@ -210,14 +210,14 @@ v_orb = np.sqrt(G * M_bh / r_in)
 h = v_orb * r_in
 
 # Small inward radial velocity
-v_r = -5.9e5  # Small radial inward velocity (in m/s)
+v_r = -1e5  # Small radial inward velocity (in m/s)
 
 v = np.sqrt(v_r**2 + v_orb**2)
 
 # Relativistic energy (normalized)
 m = M_sun
 gamma = 1 / np.sqrt(1 - (v / c)**2)  # Lorentz factor
-E = gamma * m * c**2  # Relativistic energy
+E = gamma * m * c**2 - G*M_bh*m/r_in  # Relativistic energy
 
 # Dimensionless parameters for GR case
 a = h / c
@@ -228,7 +228,7 @@ E_nl = 0.5 * m* (v**2) - G * M_bh *m / r_in
 
 # Effective potential function in Newtonian mechanics
 def V_eff(r):
-    return -G * M_bh / r + h**2 / (2 * r**2)
+    return -G * M_bh / r + h**2 / (2 * r**2) #* (1-Rs/r)
 
 
 # Define the function for dr/dphi in GR
@@ -236,7 +236,7 @@ def drdphi_gr(phi, r):
     return -r**2 * np.sqrt((1 / b**2) - (1 - Rs / r) * (1 / a**2 + 1 / r**2))**(1)
 
 # Solve for the GR case
-solngr = solve_ivp(drdphi_gr, (0, 1*np.pi), [r_in], max_step=0.01)
+solngr = solve_ivp(drdphi_gr, (0, 4*np.pi), [r_in], max_step=0.01)
 r_gr = solngr.y[0]
 phi_gr = solngr.t
 
@@ -244,13 +244,17 @@ phi_gr = solngr.t
 # Function for dr/dphi in the Newtonian limit
 def drdphi_nl(phi, r):
     # Check if the energy allows for a real solution, avoid sqrt of negative numbers
-    term = 2 * (E_nl - V_eff(r)*m) /m
+<<<<<<< HEAD
+    term = 2 * (E_nl - V_eff(r)*m) /m /h**2
+=======
+    term = 2 * (E_nl - V_eff(r))/h**2
+>>>>>>> a96279f5ea47f595cad30f9c3fd49b8b98a6d41a
     if term < 0:
         return np.inf  # If energy doesn't allow motion, return large value to stop
     return -r**2 * np.sqrt(term)
 
 # Solve for the Newtonian limit case
-solnnl = solve_ivp(drdphi_nl, (0, 1*np.pi), [r_in], max_step=0.01)
+solnnl = solve_ivp(drdphi_nl, (0, 4*np.pi), [r_in], max_step=0.01)
 r_nl = solnnl.y[0]
 phi_nl = solnnl.t
 
@@ -267,5 +271,9 @@ plt.gca().set_aspect('equal', adjustable='box')
 plt.show()
 
 
-
+#%%
+plt.figure()
+plt.plot(phi_gr, r_gr)
+plt.plot(phi_nl,r_nl)
+plt.yscale('log')
 
