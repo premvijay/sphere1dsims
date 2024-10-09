@@ -225,6 +225,7 @@ b = c * h * m / E
 
 # Total energy per unit mass (Newtonian mechanics)
 E_nl = 0.5 * m* (v**2) - G * M_bh *m / r_in
+E_nl/=m
 
 # Effective potential function in Newtonian mechanics
 def V_eff(r):
@@ -244,11 +245,7 @@ phi_gr = solngr.t
 # Function for dr/dphi in the Newtonian limit
 def drdphi_nl(phi, r):
     # Check if the energy allows for a real solution, avoid sqrt of negative numbers
-<<<<<<< HEAD
-    term = 2 * (E_nl - V_eff(r)*m) /m /h**2
-=======
-    term = 2 * (E_nl - V_eff(r))/h**2
->>>>>>> a96279f5ea47f595cad30f9c3fd49b8b98a6d41a
+    term = 2 * (E_nl - V_eff(r)) /h**2
     if term < 0:
         return np.inf  # If energy doesn't allow motion, return large value to stop
     return -r**2 * np.sqrt(term)
