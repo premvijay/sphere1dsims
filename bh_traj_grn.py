@@ -186,7 +186,7 @@ plt.yscale('log')
 #%%
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.integrate import cumtrapz, solve_ivp
+from scipy.integrate import solve_ivp
 
 # Constants
 G = 6.67430e-11  # Gravitational constant in m^3 kg^(-1) s^(-2)
@@ -210,7 +210,7 @@ v_orb = np.sqrt(G * M_bh / r_in)
 h = v_orb * r_in
 
 # Small inward radial velocity
-v_r = -1e5  # Small radial inward velocity (in m/s)
+v_r = v_orb/3  # Small radial inward velocity (in m/s)
 
 v = np.sqrt(v_r**2 + v_orb**2)
 
@@ -227,7 +227,7 @@ b = c * h * m / E
 E_nl = 0.5 * m* (v**2) - G * M_bh *m / r_in
 E_nl/=m
 
-# Effective potential function in Newtonian mechanics
+# Define the effective potential function in Newtonian mechanics
 def V_eff(r):
     return -G * M_bh / r + h**2 / (2 * r**2) #* (1-Rs/r)
 
@@ -236,35 +236,70 @@ def V_eff(r):
 def drdphi_gr(phi, r):
     return -r**2 * np.sqrt((1 / b**2) - (1 - Rs / r) * (1 / a**2 + 1 / r**2))**(1)
 
-# Solve for the GR case
-solngr = solve_ivp(drdphi_gr, (0, 4*np.pi), [r_in], max_step=0.01)
-r_gr = solngr.y[0]
-phi_gr = solngr.t
+# # Solve for the GR case
+# solngr = solve_ivp(drdphi_gr, (0, 4*np.pi), [r_in], max_step=0.01)
+# r_gr = solngr.y[0]
+# phi_gr = solngr.t
 
 
 # Function for dr/dphi in the Newtonian limit
 def drdphi_nl(phi, r):
-    # Check if the energy allows for a real solution, avoid sqrt of negative numbers
+    r = np.asarray(r)  # Ensure r is treated as an array
     term = 2 * (E_nl - V_eff(r)) /h**2
-    if term < 0:
-        return np.inf  # If energy doesn't allow motion, return large value to stop
-    return -r**2 * np.sqrt(term)
+    # Check if the energy allows for real solutions
+    term = np.maximum(term, 0)  # Prevent sqrt of negative numbers
+    return - r**2 * np.sqrt(term)
 
-# Solve for the Newtonian limit case
-solnnl = solve_ivp(drdphi_nl, (0, 4*np.pi), [r_in], max_step=0.01)
-r_nl = solnnl.y[0]
-phi_nl = solnnl.t
+# Event function to detect turning points where dr/dphi = 0
+drdphi_gr.terminal = True
+drdphi_gr.direction = 0
+drdphi_nl.terminal = True
+drdphi_nl.direction = 0
+
+# Function to integrate the orbit starting from a middle radius (between periapsis and apoapsis)
+def integrate_orbit(r_start, direction='both', drdphi_func=drdphi_nl):
+    r_values = []
+    phi_values = []
+
+    def integrate_half(direction):
+        phi_span = (0, -np.pi) if direction == 'outward' else (0, np.pi)
+        sol = solve_ivp(drdphi_func, phi_span, [r_start], max_step=0.01, events=drdphi_func, method='Radau')
+        r_vals = sol.y[0]
+        phi_vals = sol.t
+        return r_vals, phi_vals
+    
+    # Integrate outward for phi > 0 (dr/dphi > 0)
+    if direction == 'both' or direction == 'outward':
+        r_out, phi_out = integrate_half(direction='outward')
+        r_values.extend(r_out[::-1])
+        phi_values.extend(phi_out[::-1])
+
+    # Integrate inward for phi < 0 (dr/dphi < 0)
+    if direction == 'both' or direction == 'inward':
+        r_in, phi_in = integrate_half(direction='inward')
+        r_values.extend(r_in)
+        phi_values.extend(phi_in)
+
+    return np.array(r_values), np.array(phi_values)
+
+# Initial guess for r_start near periapsis or apoapsis
+r_start = r_in * 1
+
+# Integrate the orbit in both directions from the middle
+r_gr, phi_gr = integrate_orbit(r_start, direction='both', drdphi_func=drdphi_nl)
+r_nl, phi_nl = integrate_orbit(r_start, direction='both', drdphi_func=drdphi_nl)
 
 # Plot the orbit
 plt.plot(r_gr * np.cos(phi_gr), r_gr * np.sin(phi_gr), label='GR')
 plt.plot(r_nl * np.cos(phi_nl), r_nl * np.sin(phi_nl), label='Newtonian limit')
 plt.xlabel("x (m)")
 plt.ylabel("y (m)")
-plt.xlim(-r_in, r_in)
-plt.ylim(-r_in, r_in)
+plt.xlim(-2*r_in, 2*r_in)
+plt.ylim(-2*r_in, 2*r_in)
 plt.legend()
 plt.grid(True)
 plt.gca().set_aspect('equal', adjustable='box')
+plt.scatter([0],[0],)
 plt.show()
 
 
