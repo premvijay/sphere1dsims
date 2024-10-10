@@ -201,16 +201,16 @@ Rs = 2 * G * M_bh / c**2
 R_ISCO = 3 * Rs
 
 # Initial radius of the particle
-r_in = 1e1 * R_ISCO  
+r_in = 4e1 * R_ISCO  
 
 # Calculate the correct orbital velocity for a circular orbit at r_in
-v_orb = np.sqrt(G * M_bh / r_in)/2
+v_orb = np.sqrt(G * M_bh / r_in)/1.02
 
 # Angular momentum per unit mass (h = v_orb * r_in)
 h = v_orb * r_in
 
 # Small inward radial velocity
-v_r = -v_orb/2  # Small radial inward velocity (in m/s)
+v_r = -v_orb/20  # Small radial inward velocity (in m/s)
 
 v = np.sqrt(v_r**2 + v_orb**2)
 
@@ -234,6 +234,7 @@ def V_eff(r):
 
 # Define the function for dr/dphi in GR
 def drdphi_gr(phi, r):
+    r = np.asarray(r)  # Ensure r is treated as an array
     return -r**2 * np.sqrt((1 / b**2) - (1 - Rs / r) * (1 / a**2 + 1 / r**2))**(1)
 
 # # Solve for the GR case
@@ -286,7 +287,7 @@ def integrate_orbit(r_start, direction='both', drdphi_func=drdphi_nl):
 r_start = r_in * 1
 
 # Integrate the orbit in both directions from the middle
-r_gr, phi_gr = integrate_orbit(r_start, direction='both', drdphi_func=drdphi_nl)
+r_gr, phi_gr = integrate_orbit(r_start, direction='both', drdphi_func=drdphi_gr)
 r_nl, phi_nl = integrate_orbit(r_start, direction='both', drdphi_func=drdphi_nl)
 
 # Function to extend orbit by repeating solutions
@@ -296,7 +297,7 @@ def extend_orbit(r_values, phi_values, num_orbits=4):
     return r_extended, phi_extended
 
 # Extend the half-orbit solution to cover multiple orbits
-num_orbits = 6  # Choose how many full orbits to cover
+num_orbits = 40  # Choose how many full orbits to cover
 r_gr, phi_gr = extend_orbit(r_gr, phi_gr, num_orbits)
 r_nl, phi_nl = extend_orbit(r_nl, phi_nl, num_orbits)
 
