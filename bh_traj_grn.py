@@ -201,16 +201,16 @@ Rs = 2 * G * M_bh / c**2
 R_ISCO = 3 * Rs
 
 # Initial radius of the particle
-r_in = 8e5 * R_ISCO  
+r_in = 1e1 * R_ISCO  
 
 # Calculate the correct orbital velocity for a circular orbit at r_in
-v_orb = np.sqrt(G * M_bh / r_in)
+v_orb = np.sqrt(G * M_bh / r_in)/2
 
 # Angular momentum per unit mass (h = v_orb * r_in)
 h = v_orb * r_in
 
 # Small inward radial velocity
-v_r = v_orb/3  # Small radial inward velocity (in m/s)
+v_r = -v_orb/2  # Small radial inward velocity (in m/s)
 
 v = np.sqrt(v_r**2 + v_orb**2)
 
@@ -263,7 +263,7 @@ def integrate_orbit(r_start, direction='both', drdphi_func=drdphi_nl):
 
     def integrate_half(direction):
         phi_span = (0, -np.pi) if direction == 'outward' else (0, np.pi)
-        sol = solve_ivp(drdphi_func, phi_span, [r_start], max_step=0.01, events=drdphi_func, method='Radau')
+        sol = solve_ivp(drdphi_func, phi_span, [r_start], max_step=0.001, events=drdphi_func, method='Radau')
         r_vals = sol.y[0]
         phi_vals = sol.t
         return r_vals, phi_vals
@@ -280,7 +280,7 @@ def integrate_orbit(r_start, direction='both', drdphi_func=drdphi_nl):
         r_values.extend(r_in)
         phi_values.extend(phi_in)
 
-    return np.array(r_values), np.array(phi_values)
+    return np.array(r_values)/Rs, np.array(phi_values)
 
 # Initial guess for r_start near periapsis or apoapsis
 r_start = r_in * 1
@@ -289,13 +289,25 @@ r_start = r_in * 1
 r_gr, phi_gr = integrate_orbit(r_start, direction='both', drdphi_func=drdphi_nl)
 r_nl, phi_nl = integrate_orbit(r_start, direction='both', drdphi_func=drdphi_nl)
 
+# Function to extend orbit by repeating solutions
+def extend_orbit(r_values, phi_values, num_orbits=4):
+    r_extended = np.tile(np.concatenate([r_values, r_values[::-1]]), int(num_orbits/2))
+    phi_extended = np.concatenate([phi_values + (phi_values.max()-phi_values.min())*n for n in range(num_orbits)])
+    return r_extended, phi_extended
+
+# Extend the half-orbit solution to cover multiple orbits
+num_orbits = 6  # Choose how many full orbits to cover
+r_gr, phi_gr = extend_orbit(r_gr, phi_gr, num_orbits)
+r_nl, phi_nl = extend_orbit(r_nl, phi_nl, num_orbits)
+
+
 # Plot the orbit
 plt.plot(r_gr * np.cos(phi_gr), r_gr * np.sin(phi_gr), label='GR')
 plt.plot(r_nl * np.cos(phi_nl), r_nl * np.sin(phi_nl), label='Newtonian limit')
-plt.xlabel("x (m)")
-plt.ylabel("y (m)")
-plt.xlim(-2*r_in, 2*r_in)
-plt.ylim(-2*r_in, 2*r_in)
+plt.xlabel("$x (R_s)$")
+plt.ylabel("$y (R_s)$")
+plt.xlim(-2*r_in/Rs, 2*r_in/Rs)
+plt.ylim(-2*r_in/Rs, 2*r_in/Rs)
 plt.legend()
 plt.grid(True)
 plt.gca().set_aspect('equal', adjustable='box')
