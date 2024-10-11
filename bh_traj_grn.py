@@ -186,6 +186,7 @@ plt.yscale('log')
 #%%
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
 from scipy.integrate import solve_ivp
 
 # Constants
@@ -322,3 +323,81 @@ plt.plot(phi_gr, r_gr)
 plt.plot(phi_nl,r_nl)
 plt.yscale('log')
 
+#%%
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
+from scipy.integrate import solve_ivp
+import matplotlib.cm as cm
+# Set up figure and axis for the animation
+fig, ax = plt.subplots()
+ax.set_xlim(-2 * r_in / Rs, 2 * r_in / Rs)
+ax.set_ylim(-2 * r_in / Rs, 2 * r_in / Rs)
+ax.set_aspect('equal')
+
+# Initialize the orbit plot
+nl_line, = ax.plot([], [], label='Newtonian', color='blue', alpha=0.2)
+gr_line, = ax.plot([], [], label='GR', color='red', alpha=0.2)
+
+# Markers for current position
+nl_marker, = ax.plot([], [], 'bo', markersize=8)
+gr_marker, = ax.plot([], [], 'ro', markersize=8)
+
+# Color fading trails
+nl_trail, = ax.plot([], [], color='blue', lw=1, alpha=0.5)
+gr_trail, = ax.plot([], [], color='red', lw=1, alpha=0.5)
+
+# Initialization function for the animation
+def init():
+    nl_line.set_data([], [])
+    gr_line.set_data([], [])
+    nl_marker.set_data([], [])
+    gr_marker.set_data([], [])
+    nl_trail.set_data([], [])
+    gr_trail.set_data([], [])
+    return nl_line, gr_line, nl_marker, gr_marker, nl_trail, gr_trail
+
+# Update function for the animation
+def update(i):
+    i*=200
+    # Define the current and trailing positions
+    trail_length = 3000  # Adjust the length of the trail
+    start = max(0, i - trail_length)
+    
+    # Fade the trail using color maps
+    # fade_values = np.linspace(0.2, 1, trail_length)
+    
+    # Plot the trail for Newtonian orbit
+    # nl_x_trail = r_nl[start:i] * np.cos(phi_nl[start:i])
+    # nl_y_trail = r_nl[start:i] * np.sin(phi_nl[start:i])
+    # for j in range(0,len(nl_x_trail) - 1,1000):
+    #     ax.plot(nl_x_trail[j:j+1000], nl_y_trail[j:j+1000], color=cm.Blues(fade_values[j]), lw=1)
+    
+    # Plot the trail for GR orbit
+    # gr_x_trail = r_gr[start:i] * np.cos(phi_gr[start:i])
+    # gr_y_trail = r_gr[start:i] * np.sin(phi_gr[start:i])
+    # for j in range(0,len(gr_x_trail) - 1, 1000):
+    #     ax.plot(gr_x_trail[j:j+1000], gr_y_trail[j:j+1000], color=cm.Reds(fade_values[j]), lw=1)
+    
+    # Current positions
+    nl_marker.set_data(r_nl[i] * np.cos(phi_nl[i]), r_nl[i] * np.sin(phi_nl[i]))
+    gr_marker.set_data(r_gr[i] * np.cos(phi_gr[i]), r_gr[i] * np.sin(phi_gr[i]))
+
+    nl_line.set_data(r_nl[:i] * np.cos(phi_nl[:i]), r_nl[:i] * np.sin(phi_nl[:i]))
+    gr_line.set_data(r_gr[:i] * np.cos(phi_gr[:i]), r_gr[:i] * np.sin(phi_gr[:i]))
+    if i<3000:   
+        print(i, start)
+        print(r_nl[start:i] * np.cos(phi_nl[start:i]), r_nl[start:i] * np.sin(phi_nl[start:i]))
+    nl_trail.set_data(r_nl[start:i] * np.cos(phi_nl[start:i]), r_nl[start:i] * np.sin(phi_nl[start:i]))
+    gr_trail.set_data(r_gr[start:i] * np.cos(phi_gr[start:i]), r_gr[start:i] * np.sin(phi_gr[start:i]))
+    
+    return nl_marker, gr_marker
+
+# Create the animation
+num_frames = len(r_nl)//200  # Number of frames corresponds to the length of the orbit
+ani = FuncAnimation(fig, update, frames=num_frames, init_func=init, blit=True, interval=1000)
+
+# Show the animation
+plt.legend()
+plt.grid(True)
+plt.show()
