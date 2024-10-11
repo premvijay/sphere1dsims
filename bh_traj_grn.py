@@ -334,6 +334,8 @@ fig, ax = plt.subplots()
 ax.set_xlim(-2 * r_in / Rs, 2 * r_in / Rs)
 ax.set_ylim(-2 * r_in / Rs, 2 * r_in / Rs)
 ax.set_aspect('equal')
+ax.set_xlabel("$x (R_s)$")
+ax.set_ylabel("$y (R_s)$")
 
 # Initialize the orbit plot
 nl_line, = ax.plot([], [], label='Newtonian', color='blue', alpha=0.2)
@@ -385,17 +387,17 @@ def update(i):
 
     nl_line.set_data(r_nl[:i] * np.cos(phi_nl[:i]), r_nl[:i] * np.sin(phi_nl[:i]))
     gr_line.set_data(r_gr[:i] * np.cos(phi_gr[:i]), r_gr[:i] * np.sin(phi_gr[:i]))
-    if i<3000:   
-        print(i, start)
-        print(r_nl[start:i] * np.cos(phi_nl[start:i]), r_nl[start:i] * np.sin(phi_nl[start:i]))
+    # if i<3000:   
+    #     print(i, start)
+    #     print(r_nl[start:i] * np.cos(phi_nl[start:i]), r_nl[start:i] * np.sin(phi_nl[start:i]))
     nl_trail.set_data(r_nl[start:i] * np.cos(phi_nl[start:i]), r_nl[start:i] * np.sin(phi_nl[start:i]))
     gr_trail.set_data(r_gr[start:i] * np.cos(phi_gr[start:i]), r_gr[start:i] * np.sin(phi_gr[start:i]))
     
-    return nl_marker, gr_marker
+    return  nl_line, gr_line, nl_marker, gr_marker, nl_trail, gr_trail
 
 # Create the animation
 num_frames = len(r_nl)//200  # Number of frames corresponds to the length of the orbit
-ani = FuncAnimation(fig, update, frames=num_frames, init_func=init, blit=True, interval=1000)
+ani = FuncAnimation(fig, update, frames=num_frames, init_func=init, blit=True, interval=10)
 
 # Show the animation
 plt.legend()
