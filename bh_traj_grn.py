@@ -415,7 +415,7 @@ from scipy.interpolate import interp1d
 r_gr = interp1d(phi_gr, r_gr)(phi_nl)
 phi_gr = phi_nl
 num_steps = len(r_nl)
-steps_per_frame = 50
+steps_per_frame = 100
 num_frames = num_steps//steps_per_frame  # Number of frames corresponds to the length of the orbit
 ani = FuncAnimation(fig, update, frames=num_frames, init_func=init, blit=True, interval=5)
 
@@ -425,5 +425,5 @@ plt.grid(True)
 plt.show()
 
 # %%
-ani.save('orbits_gr_vs_nl.gif')
+ani.save('orbits_gr_vs_nl.gif', fps=60)
 # %%
