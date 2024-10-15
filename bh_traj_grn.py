@@ -265,7 +265,10 @@ def integrate_orbit(r_start, direction='both', drdphi_func=drdphi_nl):
 
     def integrate_half(direction):
         phi_span = (0, -np.pi) if direction == 'outward' else (0, np.pi)
-        sol = solve_ivp(drdphi_func, phi_span, [r_start], max_step=0.001, events=drdphi_func, method='Radau')
+        sign = -1  if direction == 'outward' else 1
+        phi_range = np.arange(phi_span[0],phi_span[1], 0.001*sign)
+        sol = solve_ivp(drdphi_func, phi_span, [r_start], max_step=0.001, t_eval=phi_range,  events=drdphi_func, method='Radau')
+        # print(phi_range)
         r_vals = sol.y[0]
         phi_vals = sol.t
         return r_vals, phi_vals
@@ -302,28 +305,37 @@ num_orbits = 40  # Choose how many full orbits to cover
 r_gr, phi_gr = extend_orbit(r_gr, phi_gr, num_orbits)
 r_nl, phi_nl = extend_orbit(r_nl, phi_nl, num_orbits)
 
-
-# Plot the orbit
-plt.plot(r_gr * np.cos(phi_gr), r_gr * np.sin(phi_gr), label='GR')
-plt.plot(r_nl * np.cos(phi_nl), r_nl * np.sin(phi_nl), label='Newtonian limit')
-plt.xlabel("$x (R_s)$")
-plt.ylabel("$y (R_s)$")
-plt.xlim(-2*r_in/Rs, 2*r_in/Rs)
-plt.ylim(-2*r_in/Rs, 2*r_in/Rs)
-plt.legend()
-plt.grid(True)
-plt.gca().set_aspect('equal', adjustable='box')
-plt.scatter([0],[0],)
-plt.show()
+sync_ind_gr = np.where(phi_gr==0)[0][0]
+phi_gr = phi_gr[sync_ind_gr:]
+r_gr = r_gr[sync_ind_gr:]
 
 
-#%%
-plt.figure()
-plt.plot(phi_gr, r_gr)
-plt.plot(phi_nl,r_nl)
-plt.yscale('log')
+sync_ind_nl = np.where(phi_nl==0)[0][0]
+phi_nl = phi_nl[sync_ind_nl:]
+r_nl = r_nl[sync_ind_nl:]
 
-#%%
+
+# # Plot the orbit
+# plt.plot(r_gr * np.cos(phi_gr), r_gr * np.sin(phi_gr), label='GR')
+# plt.plot(r_nl * np.cos(phi_nl), r_nl * np.sin(phi_nl), label='Newtonian limit')
+# plt.xlabel("$x (R_s)$")
+# plt.ylabel("$y (R_s)$")
+# plt.xlim(-2*r_in/Rs, 2*r_in/Rs)
+# plt.ylim(-2*r_in/Rs, 2*r_in/Rs)
+# plt.legend()
+# plt.grid(True)
+# plt.gca().set_aspect('equal', adjustable='box')
+# plt.scatter([0],[0],)
+# plt.show()
+
+
+# #%%
+# plt.figure()
+# plt.plot(phi_gr, r_gr)
+# plt.plot(phi_nl,r_nl)
+# plt.yscale('log')
+
+# #%%
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
@@ -331,23 +343,24 @@ from scipy.integrate import solve_ivp
 import matplotlib.cm as cm
 # Set up figure and axis for the animation
 fig, ax = plt.subplots()
-ax.set_xlim(-2 * r_in / Rs, 2 * r_in / Rs)
-ax.set_ylim(-2 * r_in / Rs, 2 * r_in / Rs)
+lims = 1.2 * r_in / Rs
+ax.set_xlim(-lims, lims)
+ax.set_ylim(-lims, lims)
 ax.set_aspect('equal')
 ax.set_xlabel("$x (R_s)$")
 ax.set_ylabel("$y (R_s)$")
 
 # Initialize the orbit plot
-nl_line, = ax.plot([], [], label='Newtonian', color='blue', alpha=0.2)
-gr_line, = ax.plot([], [], label='GR', color='red', alpha=0.2)
+nl_line, = ax.plot([], [], color='blue', alpha=0.1)
+gr_line, = ax.plot([], [], color='red', alpha=0.1)
 
 # Markers for current position
 nl_marker, = ax.plot([], [], 'bo', markersize=8)
 gr_marker, = ax.plot([], [], 'ro', markersize=8)
 
 # Color fading trails
-nl_trail, = ax.plot([], [], color='blue', lw=1, alpha=0.5)
-gr_trail, = ax.plot([], [], color='red', lw=1, alpha=0.5)
+nl_trail, = ax.plot([], [], label='Newtonian', color='blue', lw=1, alpha=0.5)
+gr_trail, = ax.plot([], [], label='GR', color='red', lw=1, alpha=0.5)
 
 # Initialization function for the animation
 def init():
@@ -361,10 +374,12 @@ def init():
 
 # Update function for the animation
 def update(i):
-    i*=200
+    i*=steps_per_frame
     # Define the current and trailing positions
-    trail_length = 3000  # Adjust the length of the trail
+    trail_length = num_steps//50  # Adjust the length of the trail
+    line_length = num_steps//5  # Adjust the length of the trail
     start = max(0, i - trail_length)
+    start_line = max(0,i-line_length)
     
     # Fade the trail using color maps
     # fade_values = np.linspace(0.2, 1, trail_length)
@@ -385,8 +400,8 @@ def update(i):
     nl_marker.set_data(r_nl[i] * np.cos(phi_nl[i]), r_nl[i] * np.sin(phi_nl[i]))
     gr_marker.set_data(r_gr[i] * np.cos(phi_gr[i]), r_gr[i] * np.sin(phi_gr[i]))
 
-    nl_line.set_data(r_nl[:i] * np.cos(phi_nl[:i]), r_nl[:i] * np.sin(phi_nl[:i]))
-    gr_line.set_data(r_gr[:i] * np.cos(phi_gr[:i]), r_gr[:i] * np.sin(phi_gr[:i]))
+    nl_line.set_data(r_nl[start_line:i] * np.cos(phi_nl[start_line:i]), r_nl[start_line:i] * np.sin(phi_nl[start_line:i]))
+    gr_line.set_data(r_gr[start_line:i] * np.cos(phi_gr[start_line:i]), r_gr[start_line:i] * np.sin(phi_gr[start_line:i]))
     # if i<3000:   
     #     print(i, start)
     #     print(r_nl[start:i] * np.cos(phi_nl[start:i]), r_nl[start:i] * np.sin(phi_nl[start:i]))
@@ -396,10 +411,19 @@ def update(i):
     return  nl_line, gr_line, nl_marker, gr_marker, nl_trail, gr_trail
 
 # Create the animation
-num_frames = len(r_nl)//200  # Number of frames corresponds to the length of the orbit
-ani = FuncAnimation(fig, update, frames=num_frames, init_func=init, blit=True, interval=10)
+from scipy.interpolate import interp1d
+r_gr = interp1d(phi_gr, r_gr)(phi_nl)
+phi_gr = phi_nl
+num_steps = len(r_nl)
+steps_per_frame = 50
+num_frames = num_steps//steps_per_frame  # Number of frames corresponds to the length of the orbit
+ani = FuncAnimation(fig, update, frames=num_frames, init_func=init, blit=True, interval=5)
 
 # Show the animation
 plt.legend()
 plt.grid(True)
 plt.show()
+
+# %%
+ani.save('orbits_gr_vs_nl.gif')
+# %%
