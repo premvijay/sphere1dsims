@@ -1,4 +1,4 @@
-#%%
+#%%  Analytic solution in the case of GR
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.special import ellipj
@@ -183,7 +183,18 @@ plt.plot(theta,r)
 plt.plot(phi,r)
 plt.yscale('log')
 
-#%%
+
+
+
+
+
+
+
+
+
+
+#%%  GR vs Newtonian limit trajectory by solving diff. equations
+# This is solved by integrating dr_dphi from the velocity equation which has both + and - 
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
@@ -313,6 +324,9 @@ r_gr = r_gr[sync_ind_gr:]
 sync_ind_nl = np.where(phi_nl==0)[0][0]
 phi_nl = phi_nl[sync_ind_nl:]
 r_nl = r_nl[sync_ind_nl:]
+
+tau_nl = cumtrapz((r_nl*Rs)**2/h,phi_nl, initial=0)
+tau_gr = cumtrapz((r_gr*Rs)**2/h,phi_gr, initial=0)
 
 
 # # Plot the orbit
