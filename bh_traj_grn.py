@@ -325,6 +325,14 @@ sync_ind_nl = np.where(phi_nl==0)[0][0]
 phi_nl = phi_nl[sync_ind_nl:]
 r_nl = r_nl[sync_ind_nl:]
 
+
+# # Remove duplicate times and corresponding radii
+# phi_nl, unique_indices_nl = np.unique(phi_nl, return_index=True)
+# r_nl = r_nl[unique_indices_nl]
+
+# phi_gr, unique_indices_gr = np.unique(phi_gr, return_index=True)
+# r_gr = r_gr[unique_indices_gr]
+
 tau_nl = cumtrapz((r_nl*Rs)**2/h,phi_nl, initial=0)
 tau_gr = cumtrapz((r_gr*Rs)**2/h,phi_gr, initial=0)
 
@@ -426,8 +434,29 @@ def update(i):
 
 # Create the animation
 from scipy.interpolate import interp1d
-r_gr = interp1d(phi_gr, r_gr)(phi_nl)
-phi_gr = phi_nl
+# r_gr = interp1d(phi_gr, r_gr)(phi_nl)
+# phi_gr = phi_nl
+
+# Remove duplicate times and corresponding radii
+tau_nl, unique_indices_nl = np.unique(tau_nl, return_index=True)
+r_nl = r_nl[unique_indices_nl]
+phi_nl = phi_nl[unique_indices_nl]
+
+tau_gr, unique_indices_gr = np.unique(tau_gr, return_index=True)
+r_gr = r_gr[unique_indices_gr]
+phi_gr = phi_gr[unique_indices_gr]
+
+# Define a common time array (use the slower time scale to avoid truncation)
+tau_common = np.linspace(0, min(tau_gr[-1], tau_nl[-1]), num=len(tau_gr))
+
+# Interpolate both orbits to the common time array
+r_gr = interp1d(tau_gr, r_gr, kind='cubic', fill_value="extrapolate")(tau_common)
+phi_gr = interp1d(tau_gr, phi_gr, kind='cubic', fill_value="extrapolate")(tau_common)
+
+r_nl = interp1d(tau_nl, r_nl, kind='cubic', fill_value="extrapolate")(tau_common)
+phi_nl = interp1d(tau_nl, phi_nl, kind='cubic', fill_value="extrapolate")(tau_common)
+
+
 num_steps = len(r_nl)
 steps_per_frame = 100
 num_frames = num_steps//steps_per_frame  # Number of frames corresponds to the length of the orbit
