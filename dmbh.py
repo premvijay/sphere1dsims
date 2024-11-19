@@ -41,70 +41,91 @@ plt.show()
 
 
 #%% # Alternate implementation using scipy integrate for faster vectorized computation and robust methods
+import numpy as np
+import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp
 
-def thick_shell_prof(x,size=1):
-    x/=size
-    return np.where(np.logical_and(x >= -1, x <= 1), (1 + x)/2, (x>1).astype(np.int16))
-    # return np.arctan(x)/np.pi+1/2
+# Define the profile for thick shell
+def thick_shell_prof(x, size=1):
+    """
+    Return a profile for thick shells. The profile is symmetric about x=0 
+    and smoothly transitions to zero outside the [-1, 1] range.
+    """
+    x /= size
+    return np.where(np.logical_and(x >= -1, x <= 1), (1 + x) / 2, (x > 1).astype(np.int16))
 
-def Mbh(r,size):
-    return np.where(np.logical_and(r >= 0, r <= size), r/size, (r>size).astype(np.int16))
-    # np.heaviside(0.1-r,1)
-    
-# first = 1
+# Black hole mass profile
+def Mbh(r, size):
+    """
+    Black hole mass profile as a function of radius. Returns mass proportional to r inside 
+    some size and a constant mass beyond that size.
+    """
+    return np.where(np.logical_and(r >= 0, r <= size), r / size, (r > size).astype(np.int16))
+
+# Evolve function for the system
 def shell_evolve(t, y, L, shell_mass):
     """
-    Function representing the gravitational force+ acting on each shell.
+    Function representing the evolution of shells. Takes into account self-gravity, angular momentum, 
+    and GR correction terms.
     """
     N = len(y) // 2
     pos = y[:N]  # Positions of shells
     vel = y[N:]  # Velocities of shells
+    # print(pos, vel)
     
-    posprof = pos[:,None]
-    posprof.sort()
-    # global first
-    # if first: print(posprof); first=0
-    # accel = -shell_mass * np.sum((pos[:, None] < pos[None]), axis=0) / (pos)**2 / 1e1
-    mass_enc = shell_mass * np.sum(thick_shell_prof(pos[None]-posprof,.02), axis=0) + Mbh(pos,0.1) 
-    # accel = -shell_mass * (np.sum((pos[:, None] < (pos*.9)[None]), axis=0)+np.sum((pos[:, None] < (pos*1.1)[None]), axis=0))/2 / (pos+3e-4)**2 / 1e1
-    accel = -mass_enc / (pos+1e-20)**2 / 1e1
-    accel += L**2 / (pos+1e-20)**3  # Additional acceleration terms due to angular momentum (if needed)
-    accel += - 1e-6 * (3 * mass_enc * L**2) / ((pos+1e-20)**4)
+    posprof = pos[:, None].copy()
+    posprof.sort(axis=0)  # Sort positions for mass enclosed calculation
+
+    # Calculate the mass enclosed within each shell
+    mass_enc = shell_mass * np.sum(thick_shell_prof(pos[None] - posprof, 0.02), axis=0) + Mbh(pos, 0.1)
+
+    # Gravitational acceleration (self-gravity)
+    accel = -mass_enc / (pos + 1e-20)**2 / 1e1
+    
+    # Angular momentum term
+    accel += L**2 / (pos + 1e-20)**3  # Centrifugal acceleration
+
+    # General relativity correction term
+    # accel += -1e-6 * (3 * mass_enc * L**2) / ((pos + 1e-9)**4)
+
     # For shells crossing through the center:
-    # vel *= np.sign(pos)
-    # pos = np.abs(pos)
-    
+    # Set velocity and position to zero if they reach or cross the center
+    # at_center = pos <= 0
+    # accel[at_center] = 0
+    # vel[at_center] = 0
+    # pos[at_center] = 0
+
     return np.concatenate([vel, accel])
 
 # Initial conditions
 TotMass = 30
 NumShells = 30
 shell_mass = TotMass / NumShells
-pos0 = np.linspace(.05, 1, NumShells)
-vel0 = pos0 * 2  # Initial velocities from Hubble flow
-L = 0.02
+pos0 = np.linspace(0.05, 1, NumShells)  # Initial positions of shells
+vel0 = pos0 * 2  # Initial velocities following Hubble flow
+
+# Angular momentum array (can vary between shells if needed)
+L = 0.02 # np.linspace(0.02, 0.020001, NumShells)  # Angular momentum for each shell
 
 # Pack initial conditions
 y0 = np.concatenate([pos0, vel0])
 
-# Time span
+# Time span for the simulation
 TotalTime = 2
 t_span = (0, TotalTime)
 
-# Solve the ODE
-sol = solve_ivp(lambda t, y: shell_evolve(t, y, L, shell_mass), t_span, y0, method='Radau', rtol=1e-7, max_step=0.001)
+# Solve the ODE using solve_ivp with vectorized equations
+sol = solve_ivp(lambda t, y: shell_evolve(t, y, L, shell_mass), t_span, y0, method='Radau', rtol=1e-7, max_step=0.1)
 
-
-
-##%% Plot the trajectories
-plt.figure()
+##%% Plot the trajectories of the shells
+plt.figure(figsize=(10, 6))
 plt.plot(sol.t, sol.y[:NumShells].T)
 plt.xlabel('Time')
 plt.ylabel('Position')
-plt.title('Trajectories of Shells')
-# plt.ylim(0,2)
+plt.title('Trajectories of Shells over Time')
+plt.grid(True)
 plt.show()
+
 
 
 
