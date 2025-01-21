@@ -76,8 +76,9 @@ def shell_evolve(t, y, L, shell_mass):
     posprof = pos[:, None].copy()
     posprof.sort(axis=0)  # Sort positions for mass enclosed calculation
 
+    bhsize = 0.001
     # Calculate the mass enclosed within each shell
-    mass_enc = shell_mass * np.sum(thick_shell_prof(pos[None] - posprof, 0.02), axis=0) + Mbh(pos, 0.1)
+    mass_enc = shell_mass * np.sum(thick_shell_prof(pos[None] - posprof, 0.02), axis=0) #+ Mbh(pos, bhsize)
 
     # Gravitational acceleration (self-gravity)
     accel = -mass_enc / (pos + 1e-20)**2 / 1e1
@@ -86,7 +87,10 @@ def shell_evolve(t, y, L, shell_mass):
     accel += L**2 / (pos + 1e-20)**3  # Centrifugal acceleration
 
     # General relativity correction term
-    # accel += -1e-6 * (3 * mass_enc * L**2) / ((pos + 1e-9)**4)
+    accel += -1e-7 * (3 * mass_enc * L**2) / ((pos + 1e-9)**4)
+
+    vel = np.where(pos>bhsize, vel, 0)
+    accel = np.where(pos>bhsize, accel, 0)
 
     # For shells crossing through the center:
     # Set velocity and position to zero if they reach or cross the center
@@ -122,6 +126,7 @@ plt.figure(figsize=(10, 6))
 plt.plot(sol.t, sol.y[:NumShells].T)
 plt.xlabel('Time')
 plt.ylabel('Position')
+plt.ylim(-0.2,3)
 plt.title('Trajectories of Shells over Time')
 plt.grid(True)
 plt.show()
@@ -131,13 +136,13 @@ plt.show()
 
 #%%
 from scipy.signal import savgol_filter
+from scipy.interpolate import interp1d
+
 pos = sol.y[:NumShells,1500]
+
 posint = np.linspace(.05, 1, NumShells*10)
 plt.plot(posint,savgol_filter(shell_mass * np.sum(thick_shell_prof(posint[None]-pos[:,None],.0002), axis=0),20,1))
 
-#%%
-pos = sol.y[:NumShells,1500]
-from scipy.interpolate import interp1d
 Mfn = interp1d(pos0,shell_mass * np.sum(thick_shell_prof(pos0[None]-pos[:,None],.0002), axis=0), kind=1)
 plt.plot(pos0,shell_mass * np.sum(thick_shell_prof(pos0[None]-pos[:,None],.0002), axis=0))
 posint = np.linspace(.05, 1, NumShells*3)
