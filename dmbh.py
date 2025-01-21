@@ -76,7 +76,7 @@ def shell_evolve(t, y, L, shell_mass):
     posprof = pos[:, None].copy()
     posprof.sort(axis=0)  # Sort positions for mass enclosed calculation
 
-    bhsize = 0.001
+    # bhsize = 0.001
     # Calculate the mass enclosed within each shell
     mass_enc = shell_mass * np.sum(thick_shell_prof(pos[None] - posprof, 0.02), axis=0) #+ Mbh(pos, bhsize)
 
@@ -87,10 +87,11 @@ def shell_evolve(t, y, L, shell_mass):
     accel += L**2 / (pos + 1e-20)**3  # Centrifugal acceleration
 
     # General relativity correction term
-    accel += -1e-7 * (3 * mass_enc * L**2) / ((pos + 1e-9)**4)
+    accel += -3e-5 * (3 * mass_enc * L**2) / ((pos + 1e-9)**4)
 
-    vel = np.where(pos>bhsize, vel, 0)
-    accel = np.where(pos>bhsize, accel, 0)
+    trapdetectsize = 0.0001
+    vel = np.where(pos>trapdetectsize, vel, 0)
+    accel = np.where(pos>trapdetectsize, accel, 0)
 
     # For shells crossing through the center:
     # Set velocity and position to zero if they reach or cross the center
